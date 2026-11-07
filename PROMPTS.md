@@ -22,3 +22,18 @@ ChatGPT was used as an assistance tool during development.
 
 ## Developer Responsibility
 AI suggestions were reviewed, tested and adapted during development. The developer is responsible for understanding and explaining the submitted implementation.
+## Problems Encountered and Fixes
+
+1. Fixed Git configuration and repository remote URL issues.
+2. Corrected transfer test failures caused by assuming fixed database user IDs.
+3. Improved amount validation using Python Decimal.
+4. Added idempotency checks to prevent duplicate transfers.
+5. Added double-entry ledger verification before committing transactions.
+
+## Verification
+
+- Automated tests executed successfully.
+- Deposit transaction verified.
+- Withdrawal transaction verified.
+- Transfer transaction verified.
+- Debit and credit entries checked for balance.
