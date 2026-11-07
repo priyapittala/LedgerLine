@@ -383,6 +383,75 @@ class LedgerLineDepositTests(unittest.TestCase):
         self.assertEqual(self.get_balance(), 3000)
         self.assertEqual(self.get_transaction_count(), 1)
 
+    # ROLE-BASED ACCESS CONTROL TESTS
+
+    def set_user_role(self, role):
+
+        connection = database.get_connection()
+
+        connection.execute("""
+            UPDATE users
+            SET role = ?
+            WHERE id = ?
+        """, (role, self.sender_id))
+
+        connection.commit()
+        connection.close()
+
+    def test_account_holder_can_access_customer_pages(self):
+
+        response = self.client.get("/dashboard")
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get("/deposit")
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get("/withdraw")
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get("/transfer")
+        self.assertEqual(response.status_code, 200)
+
+    def test_auditor_cannot_perform_transactions(self):
+
+        self.set_user_role("auditor")
+
+        responses = [
+            self.client.post("/deposit", data={"amount": "10"}),
+            self.client.post("/withdraw", data={"amount": "10"}),
+            self.client.post("/transfer", data={
+                "recipient_account": "LLRECIPIENT01",
+                "amount": "10",
+                "idempotency_key": "f" * 32
+            })
+        ]
+
+        for response in responses:
+            self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(self.get_transaction_count(), 0)
+        self.assertEqual(self.get_balance(), 0)
+
+    def test_admin_cannot_perform_customer_transactions(self):
+
+        self.set_user_role("admin")
+
+        responses = [
+            self.client.post("/deposit", data={"amount": "10"}),
+            self.client.post("/withdraw", data={"amount": "10"}),
+            self.client.post("/transfer", data={
+                "recipient_account": "LLRECIPIENT01",
+                "amount": "10",
+                "idempotency_key": "g" * 32
+            })
+        ]
+
+        for response in responses:
+            self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(self.get_transaction_count(), 0)
+        self.assertEqual(self.get_balance(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
