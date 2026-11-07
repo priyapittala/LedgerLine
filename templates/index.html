@@ -1,0 +1,75 @@
+
+<
+<
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LedgerLine - Secure Banking</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <h1>LedgerLine</h1>
+            <p>Secure Money Movement System</p>
+        </div>
+
+        <nav>
+            <a href="{{ url_for('login') }}" class="btn">
+                Login
+            </a>
+
+            <a href="{{ url_for('register') }}" class="btn">
+                Register
+            </a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h2>Welcome to LedgerLine</h2>
+
+        <p>
+            A smarter and safer way to manage financial transactions.
+            <br>
+            Secure transfers, transparent records and reliable operations.
+        </p>
+
+        <a href="#features" class="btn">Explore Features</a>
+    </section>
+
+    <section class="features" id="features">
+
+        <div class="feature-card">
+            <h3>Secure Transactions</h3>
+            <p>Designed to protect money movement and prevent unauthorized transfers.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Account Management</h3>
+            <p>Organize account information and manage user access.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Transaction History</h3>
+            <p>Maintain clear records of financial activities.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Audit Trail</h3>
+            <p>Track financial activities and identify who performed each action.</p>
+        </div>
+
+    </section>
+
+    <footer>
+        <p>LedgerLine © 2026 | Secure Money Movement System</p>
+    </footer>
+
+</body>
+</html>

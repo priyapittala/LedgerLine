@@ -1,0 +1,134 @@
+
+<!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Deposit Money | LedgerLine</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="dashboard-page">
+
+    <nav class="dash-navbar">
+        <div class="dash-brand">
+            <span class="brand-icon">L</span>
+            <span>LedgerLine</span>
+        </div>
+
+        <a href="{{ url_for('dashboard') }}" class="logout-btn">
+            Back to Dashboard
+        </a>
+    </nav>
+
+    <main class="deposit-container">
+
+        <section class="deposit-heading">
+            <div>
+                <p class="welcome-label">ACCOUNT SERVICES</p>
+                <h1>Deposit Money</h1>
+                <p>Add funds to your account through a secure transaction.</p>
+            </div>
+
+            <div class="deposit-heading-icon">₹</div>
+        </section>
+
+        <section class="deposit-layout">
+
+            <div class="deposit-card">
+
+                <div class="deposit-card-header">
+                    <div>
+                        <h2>Make a Deposit</h2>
+                        <p>Enter the amount you wish to add.</p>
+                    </div>
+                    <span class="deposit-status">SECURE</span>
+                </div>
+
+                {% if message %}
+                    <div class="deposit-message">
+                        {{ message }}
+                    </div>
+                {% endif %}
+
+                <form method="POST"
+                      action="{{ url_for('deposit') }}">
+
+                    <label for="amount">Deposit Amount</label>
+
+                    <div class="deposit-input-wrapper">
+                        <span>₹</span>
+                        <input
+                            type="number"
+                            id="amount"
+                            name="amount"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="0.00"
+                            required
+                        >
+                    </div>
+
+                    <p class="deposit-hint">
+                        Enter an amount in Indian Rupees (INR).
+                    </p>
+
+                    <button type="submit" class="professional-deposit-btn">
+                        Confirm Deposit
+                        <span>→</span>
+                    </button>
+
+                </form>
+
+                <div class="deposit-security">
+                    <span>✓</span>
+                    <p>Your transaction is recorded securely in LedgerLine.</p>
+                </div>
+
+            </div>
+
+            <aside class="deposit-info-card">
+
+                <div class="deposit-info-icon">↗</div>
+
+                <h3>Secure Banking</h3>
+
+                <p>
+                    Every deposit is recorded with a transaction reference,
+                    ledger entry and audit record.
+                </p>
+
+                <div class="deposit-info-divider"></div>
+
+                <div class="deposit-feature">
+                    <span>✓</span>
+                    <div>
+                        <strong>Transaction Tracking</strong>
+                        <p>Maintain a clear transaction record.</p>
+                    </div>
+                </div>
+
+                <div class="deposit-feature">
+                    <span>✓</span>
+                    <div>
+                        <strong>Balance Protection</strong>
+                        <p>Database transactions protect updates.</p>
+                    </div>
+                </div>
+
+            </aside>
+
+        </section>
+
+    </main>
+
+    <footer class="dashboard-footer">
+        © 2026 LedgerLine. Secure financial management.
+    </footer>
+
+</body>
+</html>

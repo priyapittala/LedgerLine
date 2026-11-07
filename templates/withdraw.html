@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Withdraw Money | LedgerLine</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="dashboard-page">
+
+    <nav class="dash-navbar">
+        <div class="dash-brand">
+            <span class="brand-icon">L</span>
+            <span>LedgerLine</span>
+        </div>
+
+        <a href="{{ url_for('dashboard') }}" class="logout-btn">
+            Back to Dashboard
+        </a>
+    </nav>
+
+    <main class="deposit-container">
+
+        <section class="deposit-heading">
+            <div>
+                <p class="welcome-label">ACCOUNT SERVICES</p>
+                <h1>Withdraw Money</h1>
+                <p>Withdraw funds from your LedgerLine demo account.</p>
+            </div>
+
+            <div class="deposit-heading-icon">₹</div>
+        </section>
+
+        <section class="deposit-layout">
+
+            <div class="deposit-card">
+
+                <div class="deposit-card-header">
+                    <div>
+                        <h2>Make a Withdrawal</h2>
+                        <p>Enter the amount you wish to withdraw.</p>
+                    </div>
+                    <span class="deposit-status">SECURE</span>
+                </div>
+
+                {% if message %}
+                    <div class="deposit-message">
+                        {{ message }}
+                    </div>
+                {% endif %}
+
+                <form method="POST"
+                      action="{{ url_for('withdraw') }}">
+
+                    <label for="amount">Withdrawal Amount</label>
+
+                    <div class="deposit-input-wrapper">
+                        <span>₹</span>
+                        <input
+                            type="number"
+                            id="amount"
+                            name="amount"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="0.00"
+                            required
+                        >
+                    </div>
+
+                    <p class="deposit-hint">
+                        Enter an amount in Indian Rupees (INR).
+                    </p>
+
+                    <button type="submit" class="professional-deposit-btn">
+                        Confirm Withdrawal
+                        <span>→</span>
+                    </button>
+
+                </form>
+
+                <div class="deposit-security">
+                    <span>✓</span>
+                    <p>Your withdrawal is recorded in the LedgerLine transaction history.</p>
+                </div>
+
+            </div>
+
+            <aside class="deposit-info-card">
+
+                <div class="deposit-info-icon">↗</div>
+
+                <h3>Safe Withdrawals</h3>
+
+                <p>
+                    Every withdrawal is recorded with a transaction reference,
+                    ledger entry and audit record.
+                </p>
+
+                <div class="deposit-info-divider"></div>
+
+                <div class="deposit-feature">
+                    <span>✓</span>
+                    <div>
+                        <strong>Balance Verification</strong>
+                        <p>Withdrawals cannot exceed the available balance.</p>
+                    </div>
+                </div>
+
+                <div class="deposit-feature">
+                    <span>✓</span>
+                    <div>
+                        <strong>Transaction Tracking</strong>
+                        <p>Maintain a clear withdrawal record.</p>
+                    </div>
+                </div>
+
+            </aside>
+
+        </section>
+
+    </main>
+
+    <footer class="dashboard-footer">
+        © 2026 LedgerLine. Secure financial management.
+    </footer>
+
+</body>
+</html>

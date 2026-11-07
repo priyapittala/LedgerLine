@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Transfer Money | LedgerLine</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="dashboard-page">
+
+    <nav class="dash-navbar">
+        <div class="dash-brand">
+            <span class="brand-icon">L</span>
+            <span>LedgerLine</span>
+        </div>
+
+        <a href="{{ url_for('dashboard') }}" class="logout-btn">
+            Back to Dashboard
+        </a>
+    </nav>
+
+    <main class="deposit-container">
+
+        <section class="deposit-heading">
+            <div>
+                <p class="welcome-label">ACCOUNT SERVICES</p>
+                <h1>Transfer Money</h1>
+                <p>Send money securely to another LedgerLine account.</p>
+            </div>
+
+            <div class="deposit-heading-icon">₹</div>
+        </section>
+
+        <section class="deposit-layout">
+
+            <div class="deposit-card">
+
+                <div class="deposit-card-header">
+                    <div>
+                        <h2>Make a Transfer</h2>
+                        <p>Enter the recipient details below.</p>
+                    </div>
+                    <span class="deposit-status">SECURE</span>
+                </div>
+
+                {% if message %}
+                    <div class="deposit-message">
+                        {{ message }}
+                    </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('transfer') }}">
+                    <input type="hidden" name="idempotency_key"
+                           value="{{ idempotency_key }}">
+                      
+
+                      
+
+
+                    <label for="recipient_account">
+                        Recipient Account Number
+                    </label>
+
+                    <div class="deposit-input-wrapper">
+                        <input
+                            type="text"
+                            id="recipient_account"
+                            name="recipient_account"
+                            placeholder="Example: LL1234567890"
+                            required
+                        >
+                    </div>
+
+                    <label for="amount" style="display: block; margin-top: 20px;">
+                        Transfer Amount
+                    </label>
+
+                    <div class="deposit-input-wrapper">
+                        <span>₹</span>
+                        <input
+                            type="number"
+                            id="amount"
+                            name="amount"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="0.00"
+                            required
+                        >
+                    </div>
+
+                    <p class="deposit-hint">
+                        Enter the amount in Indian Rupees (INR).
+                    </p>
+
+                    <button type="submit" class="professional-deposit-btn">
+                        Confirm Transfer
+                        <span>→</span>
+                    </button>
+
+                </form>
+
+                <div class="deposit-security">
+                    <span>✓</span>
+                    <p>Both account balance updates are processed together.</p>
+                </div>
+
+            </div>
+
+            <aside class="deposit-info-card">
+
+                <div class="deposit-info-icon">↗</div>
+
+                <h3>Secure Money Transfer</h3>
+
+                <p>
+                    Transfer funds between active LedgerLine accounts
+                    with transaction and ledger records.
+                </p>
+
+                <div class="deposit-info-divider"></div>
+
+                <div class="deposit-feature">
+                    <span>✓</span>
+                    <div>
+                        <strong>Balance Protection</strong>
+                        <p>Transfers cannot exceed your available balance.</p>
+                    </div>
+                </div>
+
+                <div class="deposit-feature">
+                    <span>✓</span>
+                    <div>
+                        <strong>Transaction Tracking</strong>
+                        <p>Both debit and credit entries are recorded.</p>
+                    </div>
+                </div>
+
+            </aside>
+
+        </section>
+
+    </main>
+
+    <footer class="dashboard-footer">
+        © 2026 LedgerLine. Secure financial management.
+    </footer>
+
+</body>
+</html>

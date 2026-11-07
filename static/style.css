@@ -1,0 +1,876 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f4f7fb;
+    color: #172033;
+}
+
+header {
+    background: #102a43;
+    color: white;
+    padding: 22px 8%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    font-size: 26px;
+}
+
+header p {
+    color: #cbd5e1;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.hero {
+    text-align: center;
+    padding: 75px 20px;
+    background: white;
+}
+
+.hero h2 {
+    font-size: 36px;
+    margin-bottom: 18px;
+    color: #102a43;
+}
+
+.hero p {
+    color: #64748b;
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+.btn {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 13px 28px;
+    background: #087e8b;
+    color: white;
+    text-decoration: none;
+    border-radius: 7px;
+    font-weight: bold;
+}
+
+.features {
+    padding: 45px 8%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 22px;
+}
+
+.feature-card {
+    background: white;
+    padding: 28px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+}
+
+.feature-card h3 {
+    margin-bottom: 12px;
+    color: #087e8b;
+}
+
+.feature-card p {
+    color: #64748b;
+    line-height: 1.6;
+}
+
+footer {
+    text-align: center;
+    padding: 22px;
+    background: #102a43;
+    color: white;
+}
+/* Registration page styling */
+
+.card {
+    max-width: 450px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.card p {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.card form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.card form input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+.card form input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.card form button {
+    width: 100%;
+    padding: 13px;
+    margin-top: 10px;
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.card form button:hover {
+    background: #2563eb;
+}
+/* LedgerLine registration background */
+
+body.register-page {
+    background:
+        linear-gradient(
+            rgba(5, 25, 55, 0.35),
+            rgba(5, 25, 55, 0.35)
+        ),
+        url("/static/images/plp-bank.jpg");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+/* Keep registration card readable */
+
+body.register-page .card {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 15px;
+}
+
+/* ===== LedgerLine Modern Dashboard ===== */
+
+.dashboard-page {
+    margin: 0;
+    background: #f3f6fb;
+    color: #172b4d;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+}
+
+/* Navigation */
+
+.dash-navbar {
+    background: #102b50;
+    color: white;
+    padding: 18px 7%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dash-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 23px;
+    font-weight: bold;
+}
+
+.brand-icon {
+    background: #16b8a6;
+    color: white;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+}
+
+.dash-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.secure-label {
+    font-size: 13px;
+    color: #a8e8df;
+}
+
+.logout-btn {
+    background: #16b8a6;
+    color: white;
+    text-decoration: none;
+    padding: 10px 22px;
+    border-radius: 7px;
+    font-weight: bold;
+}
+
+.logout-btn:hover {
+    background: #109b8c;
+}
+
+/* Main layout */
+
+.dashboard-container {
+    max-width: 1150px;
+    margin: 35px auto;
+    padding: 0 25px;
+}
+
+/* Welcome section */
+
+.welcome-section {
+    background: linear-gradient(120deg, #102b50, #205b80);
+    color: white;
+    padding: 38px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 25px rgba(16, 43, 80, 0.12);
+}
+
+.welcome-label {
+    color: #80ded2;
+    font-size: 12px;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.welcome-section h1 {
+    font-size: 30px;
+    margin: 14px 0;
+}
+
+.welcome-description {
+    color: #d4e4f0;
+}
+
+.welcome-icon {
+    font-size: 65px;
+    color: #80ded2;
+}
+
+/* Overview cards */
+
+.overview-section {
+    margin-top: 38px;
+}
+
+.overview-section h2,
+.activity-section h2 {
+    margin-bottom: 7px;
+    font-size: 22px;
+}
+
+.section-description {
+    color: #77869b;
+    font-size: 14px;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 22px;
+}
+
+.overview-card {
+    background: white;
+    padding: 25px;
+    border-radius: 13px;
+    border: 1px solid #e6ebf2;
+    box-shadow: 0 4px 15px rgba(20, 40, 70, 0.04);
+}
+
+.overview-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #e4f7f4;
+    color: #109b8c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.overview-card p {
+    color: #77869b;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+.overview-card h3 {
+    font-size: 20px;
+    margin: 10px 0;
+    overflow-wrap: anywhere;
+}
+
+.overview-card span {
+    color: #8a98a9;
+    font-size: 12px;
+}
+
+/* Recent activity */
+
+.activity-section {
+    background: white;
+    padding: 28px;
+    margin-top: 35px;
+    border-radius: 13px;
+    border: 1px solid #e6ebf2;
+}
+
+.empty-activity {
+    text-align: center;
+    padding: 35px 10px;
+}
+
+.empty-icon {
+    font-size: 35px;
+    color: #16b8a6;
+}
+
+.empty-activity h3 {
+    margin-bottom: 8px;
+}
+
+.empty-activity p {
+    color: #8290a2;
+    font-size: 14px;
+}
+
+/* Footer */
+
+.dashboard-footer {
+    text-align: center;
+    color: #8a98a9;
+    font-size: 12px;
+    margin: 35px 0 20px;
+}
+
+/* Responsive layout */
+
+@media (max-width: 700px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dash-navbar {
+        padding: 15px 5%;
+    }
+
+    .dash-brand {
+        font-size: 18px;
+    }
+
+    .secure-label {
+        display: none;
+    }
+
+    .welcome-section {
+        padding: 25px;
+    }
+
+    .welcome-section h1 {
+        font-size: 23px;
+    }
+
+    .welcome-icon {
+        font-size: 35px;
+    }
+}
+
+/* Account Creation Section */
+
+.create-account-section {
+    background: white;
+    padding: 28px;
+    margin-top: 25px;
+    border-radius: 13px;
+    border: 1px solid #e6ebf2;
+    text-align: center;
+}
+
+.create-account-section h3 {
+    color: #102b50;
+    font-size: 21px;
+}
+
+.create-account-section p {
+    color: #77869b;
+    font-size: 14px;
+}
+
+.create-account-btn {
+    background: #16b8a6;
+    color: white;
+    border: none;
+    padding: 13px 28px;
+    margin-top: 12px;
+    border-radius: 7px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.create-account-btn:hover {
+    background: #109b8c;
+}
+
+/* PROFESSIONAL DEPOSIT PAGE */
+
+.deposit-container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 55px auto;
+}
+
+.deposit-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+}
+
+.deposit-heading h1 {
+    font-size: 34px;
+    margin: 10px 0;
+    color: #172b4d;
+}
+
+.deposit-heading p {
+    color: #718096;
+}
+
+.deposit-heading-icon {
+    width: 65px;
+    height: 65px;
+    border-radius: 18px;
+    background: #dff7f2;
+    color: #078b78;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.deposit-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 25px;
+    align-items: start;
+}
+
+.deposit-card,
+.deposit-info-card {
+    background: white;
+    padding: 32px;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(20, 40, 70, 0.07);
+}
+
+.deposit-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+}
+
+.deposit-card-header h2 {
+    color: #172b4d;
+    margin: 0 0 8px;
+    font-size: 22px;
+}
+
+.deposit-card-header p {
+    color: #8793a5;
+    margin: 0;
+    font-size: 14px;
+}
+
+.deposit-status {
+    background: #e4f8f2;
+    color: #078b78;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.deposit-card label {
+    display: block;
+    font-weight: 600;
+    color: #34445e;
+    margin-bottom: 12px;
+}
+
+.deposit-input-wrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #dce3ed;
+    border-radius: 11px;
+    padding: 0 16px;
+    background: #fbfcfe;
+}
+
+.deposit-input-wrapper span {
+    font-size: 23px;
+    color: #078b78;
+    font-weight: bold;
+}
+
+.deposit-input-wrapper input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 17px 12px;
+    font-size: 21px;
+    color: #172b4d;
+}
+
+.deposit-hint {
+    color: #98a3b3;
+    font-size: 12px;
+    margin: 10px 0 25px;
+}
+
+.professional-deposit-btn {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    background: #087f75;
+    color: white;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    transition: background 0.2s;
+}
+
+.professional-deposit-btn:hover {
+    background: #06685f;
+}
+
+.deposit-security {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #edf0f4;
+}
+
+.deposit-security span,
+.deposit-feature span {
+    color: #078b78;
+    font-weight: bold;
+}
+
+.deposit-security p {
+    color: #8793a5;
+    font-size: 12px;
+    margin: 0;
+}
+
+.deposit-info-card {
+    background: #172b4d;
+    color: white;
+}
+
+.deposit-info-icon {
+    width: 45px;
+    height: 45px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.deposit-info-card h3 {
+    margin: 22px 0 10px;
+    font-size: 21px;
+}
+
+.deposit-info-card > p {
+    color: #c1ccdc;
+    line-height: 1.7;
+    font-size: 13px;
+}
+
+.deposit-info-divider {
+    border-top: 1px solid rgba(255,255,255,0.15);
+    margin: 25px 0;
+}
+
+.deposit-feature {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.deposit-feature strong {
+    font-size: 13px;
+}
+
+.deposit-feature p {
+    font-size: 12px;
+    color: #c1ccdc;
+    margin: 6px 0 0;
+}
+
+.deposit-message {
+    background: #fff1f0;
+    color: #b42318;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+@media (max-width: 750px) {
+    .deposit-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .deposit-heading h1 {
+        font-size: 27px;
+    }
+
+    .deposit-card,
+    .deposit-info-card {
+        padding: 23px;
+    }
+}
+
+/* ===== PROFESSIONAL TRANSACTION HISTORY ===== */
+
+.transaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 22px;
+    background: #ffffff;
+    border: 1px solid #e5eaf0;
+    border-radius: 14px;
+    transition: all 0.25s ease;
+}
+
+.transaction-item:hover {
+    border-color: #0d9488;
+    box-shadow: 0 6px 18px rgba(15, 40, 65, 0.07);
+    transform: translateY(-2px);
+}
+
+.transaction-icon {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #e7f7f2;
+    color: #07856f;
+    font-size: 25px;
+    font-weight: 700;
+}
+
+.transaction-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.transaction-details h3 {
+    margin: 0 0 5px;
+    color: #142b45;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.transaction-details p {
+    margin: 0 0 5px;
+    color: #667085;
+    font-size: 13px;
+}
+
+.transaction-details small {
+    color: #929baa;
+    font-size: 12px;
+}
+
+.transaction-amount {
+    color: #07856f;
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Mobile layout */
+
+@media (max-width: 600px) {
+    .transaction-item {
+        gap: 12px;
+        padding: 15px;
+    }
+
+    .transaction-icon {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+    }
+
+    .transaction-details h3 {
+        font-size: 14px;
+    }
+
+    .transaction-amount {
+        font-size: 15px;
+    }
+}
+
+/* PREMIUM TRANSACTION HISTORY */
+
+.transaction-table-wrapper {
+    width: 100%;
+    margin-top: 25px;
+    overflow-x: auto;
+    background: #ffffff;
+    border: 1px solid #e8edf3;
+    border-radius: 14px;
+}
+
+.transaction-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+}
+
+.transaction-table thead {
+    background: #f5f8fb;
+}
+
+.transaction-table th {
+    padding: 17px 20px;
+    text-align: left;
+    color: #68788c;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid #e8edf3;
+}
+
+.transaction-table td {
+    padding: 19px 20px;
+    border-bottom: 1px solid #edf1f5;
+    font-size: 14px;
+    color: #34445a;
+}
+
+.transaction-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.transaction-table tbody tr:hover {
+    background: #f8fbfd;
+}
+
+.transaction-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.transaction-badge.deposit {
+    background: #e8f7f0;
+    color: #13845e;
+}
+
+.transaction-badge.withdrawal {
+    background: #fff0ed;
+    color: #c45140;
+}
+
+.transaction-badge.transfer {
+    background: #edf2ff;
+    color: #4563b5;
+}
+
+.transaction-description {
+    font-weight: 600;
+    color: #20344d !important;
+}
+
+.transaction-date {
+    color: #78869a !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+}
+
+.transaction-table .transaction-amount {
+    text-align: right;
+    color: #087e70;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.transaction-table .amount-heading {
+    text-align: right;
+}
+
+@media (max-width: 700px) {
+    .transaction-table-wrapper {
+        border-radius: 10px;
+    }
+}
+

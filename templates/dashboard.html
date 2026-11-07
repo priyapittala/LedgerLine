@@ -1,0 +1,336 @@
+
+<
+<
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard | LedgerLine</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- Navigation -->
+    <nav class="dash-navbar">
+
+        <div class="dash-brand">
+            <span class="brand-icon">L</span>
+            <span>LedgerLine</span>
+        </div>
+
+        <div class="dash-nav-right">
+            <span class="secure-label">● Secure Banking</span>
+
+            <a href="{{ url_for('logout') }}" class="logout-btn">
+                Logout
+            </a>
+        </div>
+
+    </nav>
+
+    <main class="dashboard-container">
+
+        <!-- Welcome Section -->
+        <section class="welcome-section">
+
+            <div>
+                <p class="welcome-label">
+                    YOUR PERSONAL BANKING SPACE
+                </p>
+
+                <h1>Welcome back, {{ name }}!</h1>
+
+                <p class="welcome-description">
+                    Manage your finances with confidence and security.
+                </p>
+            </div>
+
+            <div class="welcome-icon">✦</div>
+
+        </section>
+
+        <!-- Account Overview -->
+        <section class="overview-section">
+
+            <h2>Account Overview</h2>
+
+            <p class="section-description">
+                Your financial summary at a glance.
+            </p>
+
+            <div class="overview-grid">
+
+                {% if account %}
+
+                    <div class="overview-card balance-card">
+
+                        <div class="overview-icon">₹</div>
+
+                        <p>Available Balance</p>
+
+                        <h3>
+                            ₹{{ "%.2f"|format(account.balance_paise / 100) }}
+                        </h3>
+
+                        <span>Your current account balance</span>
+
+                    </div>
+
+                    <div class="overview-card">
+
+                        <div class="overview-icon">▣</div>
+
+                        <p>Account Number</p>
+
+                        <h3>{{ account.account_number }}</h3>
+
+                        <span>Your unique LedgerLine account</span>
+
+                    </div>
+
+                    <div class="overview-card">
+
+                        <div class="overview-icon">✓</div>
+
+                        <p>Account Status</p>
+
+                        <h3>{{ account.status|capitalize }}</h3>
+
+                        <span>Your account is registered</span>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="overview-card">
+
+                        <div class="overview-icon">₹</div>
+
+                        <p>Available Balance</p>
+
+                        <h3>₹0.00</h3>
+
+                        <span>No bank account created yet</span>
+
+                    </div>
+
+                    <div class="overview-card">
+
+                        <div class="overview-icon">▣</div>
+
+                        <p>Account Number</p>
+
+                        <h3>Not available</h3>
+
+                        <span>Create your account to get started</span>
+
+                    </div>
+
+                    <div class="overview-card">
+
+                        <div class="overview-icon">＋</div>
+
+                        <p>Account Setup</p>
+
+                        <h3>Pending</h3>
+
+                        <span>Your account is not created yet</span>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+            <!-- Account Actions -->
+            {% if account %}
+
+                <div class="create-account-section">
+
+                    <h3>Manage Your Money</h3>
+
+                    <p>
+                        Add funds, withdraw money and transfer
+                        money between LedgerLine accounts.
+                    </p>
+
+                    <a href="{{ url_for('deposit') }}"
+                       class="create-account-btn"
+                       style="display: inline-block; text-decoration: none;">
+
+                        + Deposit Money
+
+                    </a>
+
+                    <a href="{{ url_for('withdraw') }}"
+                       class="create-account-btn"
+                       style="display: inline-block; text-decoration: none; margin-left: 10px;">
+
+                        − Withdraw Money
+
+                    </a>
+
+                    <a href="{{ url_for('transfer') }}"
+                       class="create-account-btn"
+                       style="display: inline-block; text-decoration: none; margin-left: 10px;">
+
+                        ⇄ Transfer Money
+
+                    </a>
+
+                </div>
+
+            {% else %}
+
+                <div class="create-account-section">
+
+                    <h3>Ready to get started?</h3>
+
+                    <p>
+                        Create your LedgerLine bank account
+                        and start managing your finances.
+                    </p>
+
+                    {% if account_error %}
+
+                        <p>{{ account_error }}</p>
+
+                    {% endif %}
+
+                    <form method="POST"
+                          action="{{ url_for('create_account') }}">
+
+                        <button type="submit"
+                                class="create-account-btn">
+
+                            + Create Bank Account
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            {% endif %}
+
+        </section>
+
+        <!-- Recent Transactions -->
+        <section class="activity-section">
+
+            <div class="activity-heading">
+
+                <div>
+
+                    <h2>Recent Transactions</h2>
+
+                    <p class="section-description">
+                        Keep track of your financial activities.
+                    </p>
+
+                </div>
+
+            </div>
+
+            {% if transactions %}
+
+                <div class="transaction-table-wrapper">
+
+                    <table class="transaction-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>TRANSACTION</th>
+                                <th>DESCRIPTION</th>
+                                <th>DATE & TIME</th>
+                                <th class="amount-heading">AMOUNT</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for transaction in transactions %}
+
+                                <tr>
+
+                                    <td>
+
+                                        <span class="transaction-badge {{ transaction.transaction_type }}">
+
+                                            {{ transaction.transaction_type|title }}
+
+                                        </span>
+
+                                    </td>
+
+                                    <td class="transaction-description">
+
+                                        {{ transaction.description or 'Money transaction' }}
+
+                                    </td>
+
+                                    <td class="transaction-date">
+
+                                        {{ transaction.created_at }}
+
+                                    </td>
+
+                                    <td class="transaction-amount">
+
+                                        ₹{{ "%.2f"|format(transaction.amount_paise / 100) }}
+
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-activity">
+
+                    <div class="empty-icon">↔</div>
+
+                    <h3>No transactions yet</h3>
+
+                    <p>
+                        Your deposits, withdrawals and transfers
+                        will appear here.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+        </section>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+
+            <p>
+                © 2026 LedgerLine | Secure Money Movement System
+            </p>
+
+            <p>
+                Protected financial management
+            </p>
+
+        </footer>
+
+    </main>
+
+</body>
+</html>
