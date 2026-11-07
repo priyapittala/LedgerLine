@@ -1,5 +1,5 @@
 
-
+import os
 import secrets
 import sqlite3
 
@@ -25,7 +25,11 @@ from werkzeug.security import (
 app = Flask(__name__)
 
 # Temporary secret key for local development
-app.secret_key = "ledgerline-development-secret-key"
+# Secret key from environment variable
+app.secret_key = os.environ.get(
+    "LEDGERLINE_SECRET_KEY",
+    "local-development-only-secret"
+)
 
 
 # -----------------------------------------
@@ -808,4 +812,4 @@ def logout():
 # -----------------------------------------
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
