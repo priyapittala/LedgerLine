@@ -1,8 +1,9 @@
 
+
 import os
 import secrets
 import sqlite3
-
+from functools import wraps
 from decimal import Decimal, InvalidOperation
 
 from flask import (
@@ -24,12 +25,50 @@ from werkzeug.security import (
 
 app = Flask(__name__)
 
-# Temporary secret key for local development
-# Secret key from environment variable
 app.secret_key = os.environ.get(
     "LEDGERLINE_SECRET_KEY",
     "local-development-only-secret"
 )
+
+
+# -----------------------------------------
+# ROLE-BASED ACCESS CONTROL
+# -----------------------------------------
+
+def require_roles(*allowed_roles):
+
+    def decorator(function):
+
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+
+            if "user_id" not in session:
+                return redirect(url_for("login"))
+
+            connection = get_connection()
+
+            try:
+                user = connection.execute("""
+                    SELECT role
+                    FROM users
+                    WHERE id = ?
+                """, (session["user_id"],)).fetchone()
+
+            finally:
+                connection.close()
+
+            if user is None:
+                session.clear()
+                return redirect(url_for("login"))
+
+            if user["role"] not in allowed_roles:
+                return "Access denied: insufficient permissions.", 403
+
+            return function(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 # -----------------------------------------
@@ -133,12 +172,13 @@ def login():
 
         connection = get_connection()
 
-        user = connection.execute(
-            "SELECT * FROM users WHERE email = ?",
-            (email,)
-        ).fetchone()
-
-        connection.close()
+        try:
+            user = connection.execute(
+                "SELECT * FROM users WHERE email = ?",
+                (email,)
+            ).fetchone()
+        finally:
+            connection.close()
 
         if user and check_password_hash(user["password_hash"], password):
 
@@ -159,46 +199,46 @@ def login():
 # -----------------------------------------
 
 @app.route("/dashboard")
+@require_roles("admin", "account_holder", "auditor")
 def dashboard():
-
-    if "user_id" not in session:
-        return redirect(url_for("login"))
 
     connection = get_connection()
 
-    user = connection.execute("""
-        SELECT name, role
-        FROM users
-        WHERE id = ?
-    """, (session["user_id"],)).fetchone()
+    try:
+        user = connection.execute("""
+            SELECT name, role
+            FROM users
+            WHERE id = ?
+        """, (session["user_id"],)).fetchone()
 
-    account = connection.execute("""
-        SELECT account_number, balance_paise, status
-        FROM accounts
-        WHERE user_id = ?
-        ORDER BY id
-        LIMIT 1
-    """, (session["user_id"],)).fetchone()
+        if user is None:
+            session.clear()
+            return redirect(url_for("login"))
 
-    transactions = connection.execute("""
-        SELECT
-            t.transaction_type,
-            t.amount_paise,
-            t.description,
-            t.created_at
-        FROM transactions t
-        JOIN accounts a
-        ON a.id = t.to_account OR a.id = t.from_account
-        WHERE a.user_id = ?
-        ORDER BY t.id DESC
-        LIMIT 10
-    """, (session["user_id"],)).fetchall()
+        account = connection.execute("""
+            SELECT account_number, balance_paise, status
+            FROM accounts
+            WHERE user_id = ?
+            ORDER BY id
+            LIMIT 1
+        """, (session["user_id"],)).fetchone()
 
-    connection.close()
+        transactions = connection.execute("""
+            SELECT
+                t.transaction_type,
+                t.amount_paise,
+                t.description,
+                t.created_at
+            FROM transactions t
+            JOIN accounts a
+            ON a.id = t.to_account OR a.id = t.from_account
+            WHERE a.user_id = ?
+            ORDER BY t.id DESC
+            LIMIT 10
+        """, (session["user_id"],)).fetchall()
 
-    if user is None:
-        session.clear()
-        return redirect(url_for("login"))
+    finally:
+        connection.close()
 
     account_error = session.pop("account_creation_error", "")
 
@@ -217,43 +257,42 @@ def dashboard():
 # -----------------------------------------
 
 @app.route("/create-account", methods=["POST"])
+@require_roles("account_holder")
 def create_account():
-
-    if "user_id" not in session:
-        return redirect(url_for("login"))
 
     connection = get_connection()
 
-    existing_account = connection.execute("""
-        SELECT id
-        FROM accounts
-        WHERE user_id = ?
-    """, (session["user_id"],)).fetchone()
+    try:
+        existing_account = connection.execute("""
+            SELECT id
+            FROM accounts
+            WHERE user_id = ?
+        """, (session["user_id"],)).fetchone()
 
-    if existing_account:
+        if existing_account:
+            return redirect(url_for("dashboard"))
+
+        account_created = False
+
+        for attempt in range(5):
+
+            account_number = "LL" + secrets.token_hex(5).upper()
+
+            try:
+                connection.execute("""
+                    INSERT INTO accounts (account_number, user_id)
+                    VALUES (?, ?)
+                """, (account_number, session["user_id"]))
+
+                connection.commit()
+                account_created = True
+                break
+
+            except sqlite3.IntegrityError:
+                connection.rollback()
+
+    finally:
         connection.close()
-        return redirect(url_for("dashboard"))
-
-    account_created = False
-
-    for attempt in range(5):
-
-        account_number = "LL" + secrets.token_hex(5).upper()
-
-        try:
-            connection.execute("""
-                INSERT INTO accounts (account_number, user_id)
-                VALUES (?, ?)
-            """, (account_number, session["user_id"]))
-
-            connection.commit()
-            account_created = True
-            break
-
-        except sqlite3.IntegrityError:
-            connection.rollback()
-
-    connection.close()
 
     if not account_created:
         session["account_creation_error"] = (
@@ -268,10 +307,8 @@ def create_account():
 # -----------------------------------------
 
 @app.route("/deposit", methods=["GET", "POST"])
+@require_roles("account_holder")
 def deposit():
-
-    if "user_id" not in session:
-        return redirect(url_for("login"))
 
     message = ""
 
@@ -354,13 +391,9 @@ def deposit():
             if update.rowcount != 1:
                 raise ValueError("Customer balance update failed.")
 
-            # Debit system account
             connection.execute("""
                 INSERT INTO ledger_entries (
-                    transaction_id,
-                    account_id,
-                    entry_type,
-                    amount_paise
+                    transaction_id, account_id, entry_type, amount_paise
                 )
                 VALUES (?, ?, ?, ?)
             """, (
@@ -370,13 +403,9 @@ def deposit():
                 amount_paise
             ))
 
-            # Credit customer account
             connection.execute("""
                 INSERT INTO ledger_entries (
-                    transaction_id,
-                    account_id,
-                    entry_type,
-                    amount_paise
+                    transaction_id, account_id, entry_type, amount_paise
                 )
                 VALUES (?, ?, ?, ?)
             """, (
@@ -387,11 +416,7 @@ def deposit():
             ))
 
             connection.execute("""
-                INSERT INTO audit_logs (
-                    user_id,
-                    action,
-                    details
-                )
+                INSERT INTO audit_logs (user_id, action, details)
                 VALUES (?, ?, ?)
             """, (
                 session["user_id"],
@@ -399,7 +424,6 @@ def deposit():
                 f"Deposited Rs. {amount:.2f}"
             ))
 
-            # Validate before committing
             validate_ledger_transaction(connection, transaction_id)
 
             connection.commit()
@@ -422,10 +446,8 @@ def deposit():
 # -----------------------------------------
 
 @app.route("/withdraw", methods=["GET", "POST"])
+@require_roles("account_holder")
 def withdraw():
-
-    if "user_id" not in session:
-        return redirect(url_for("login"))
 
     message = ""
 
@@ -475,7 +497,6 @@ def withdraw():
             if system_account is None:
                 raise ValueError("System account not found.")
 
-            # Debit customer balance
             update = connection.execute("""
                 UPDATE accounts
                 SET balance_paise = balance_paise - ?
@@ -510,13 +531,9 @@ def withdraw():
 
             transaction_id = cursor.lastrowid
 
-            # Debit customer ledger
             connection.execute("""
                 INSERT INTO ledger_entries (
-                    transaction_id,
-                    account_id,
-                    entry_type,
-                    amount_paise
+                    transaction_id, account_id, entry_type, amount_paise
                 )
                 VALUES (?, ?, ?, ?)
             """, (
@@ -526,13 +543,9 @@ def withdraw():
                 amount_paise
             ))
 
-            # Credit system ledger
             connection.execute("""
                 INSERT INTO ledger_entries (
-                    transaction_id,
-                    account_id,
-                    entry_type,
-                    amount_paise
+                    transaction_id, account_id, entry_type, amount_paise
                 )
                 VALUES (?, ?, ?, ?)
             """, (
@@ -543,11 +556,7 @@ def withdraw():
             ))
 
             connection.execute("""
-                INSERT INTO audit_logs (
-                    user_id,
-                    action,
-                    details
-                )
+                INSERT INTO audit_logs (user_id, action, details)
                 VALUES (?, ?, ?)
             """, (
                 session["user_id"],
@@ -555,7 +564,6 @@ def withdraw():
                 f"Withdrawn Rs. {amount:.2f}"
             ))
 
-            # Validate before committing
             validate_ledger_transaction(connection, transaction_id)
 
             connection.commit()
@@ -582,10 +590,8 @@ def withdraw():
 # -----------------------------------------
 
 @app.route("/transfer", methods=["GET", "POST"])
+@require_roles("account_holder")
 def transfer():
-
-    if "user_id" not in session:
-        return redirect(url_for("login"))
 
     message = ""
 
@@ -685,7 +691,6 @@ def transfer():
         if sender["id"] == recipient["id"]:
             raise ValueError("You cannot transfer money to your own account.")
 
-        # Debit sender
         debit = connection.execute("""
             UPDATE accounts
             SET balance_paise = balance_paise - ?
@@ -697,7 +702,6 @@ def transfer():
         if debit.rowcount != 1:
             raise ValueError("Insufficient balance.")
 
-        # Credit recipient
         credit = connection.execute("""
             UPDATE accounts
             SET balance_paise = balance_paise + ?
@@ -729,13 +733,9 @@ def transfer():
 
         transaction_id = transaction.lastrowid
 
-        # Debit sender ledger
         connection.execute("""
             INSERT INTO ledger_entries (
-                transaction_id,
-                account_id,
-                entry_type,
-                amount_paise
+                transaction_id, account_id, entry_type, amount_paise
             )
             VALUES (?, ?, ?, ?)
         """, (
@@ -745,13 +745,9 @@ def transfer():
             amount_paise
         ))
 
-        # Credit recipient ledger
         connection.execute("""
             INSERT INTO ledger_entries (
-                transaction_id,
-                account_id,
-                entry_type,
-                amount_paise
+                transaction_id, account_id, entry_type, amount_paise
             )
             VALUES (?, ?, ?, ?)
         """, (
@@ -762,11 +758,7 @@ def transfer():
         ))
 
         connection.execute("""
-            INSERT INTO audit_logs (
-                user_id,
-                action,
-                details
-            )
+            INSERT INTO audit_logs (user_id, action, details)
             VALUES (?, ?, ?)
         """, (
             session["user_id"],
@@ -774,7 +766,6 @@ def transfer():
             f"Transferred Rs. {amount:.2f} to {recipient_account}"
         ))
 
-        # Validate before committing
         validate_ledger_transaction(connection, transaction_id)
 
         connection.commit()
