@@ -3,6 +3,19 @@
 import os
 import secrets
 import sqlite3
+def valid_idempotency_key(key):
+    if not isinstance(key, str) or len(key) != 32:
+        return False
+
+    try:
+        int(key, 16)
+        return True
+    except ValueError:
+        return False
+
+
+def new_idempotency_key():
+    return secrets.token_hex(16)
 from functools import wraps
 from decimal import Decimal, InvalidOperation
 
@@ -15,7 +28,7 @@ from flask import (
     session
 )
 
-from database import get_connection
+from database import get_connection, create_database
 
 from werkzeug.security import (
     generate_password_hash,
@@ -24,6 +37,7 @@ from werkzeug.security import (
 
 
 app = Flask(__name__)
+create_database()
 
 app.secret_key = os.environ.get(
     "LEDGERLINE_SECRET_KEY",
@@ -306,140 +320,196 @@ def create_account():
 # DEPOSIT
 # -----------------------------------------
 
+# -----------------------------------------
+# DEPOSIT
+# -----------------------------------------
+
 @app.route("/deposit", methods=["GET", "POST"])
 @require_roles("account_holder")
 def deposit():
 
     message = ""
 
-    if request.method == "POST":
+    if request.method == "GET":
+        return render_template(
+            "deposit.html",
+            message=message,
+            idempotency_key=secrets.token_hex(16)
+        )
 
-        raw_amount = request.form.get("amount", "").strip()
+    submitted_key = request.form.get(
+        "idempotency_key", ""
+    ).strip()
 
-        try:
-            amount = Decimal(raw_amount)
-        except InvalidOperation:
-            message = "Please enter a valid amount."
-            return render_template("deposit.html", message=message)
+    if len(submitted_key) != 32:
+        return render_template(
+            "deposit.html",
+            message="Invalid request. Please refresh and try again.",
+            idempotency_key=secrets.token_hex(16)
+        )
 
-        if not amount.is_finite() or amount <= 0:
-            message = "Please enter a valid amount."
-            return render_template("deposit.html", message=message)
+    try:
+        int(submitted_key, 16)
+    except ValueError:
+        return render_template(
+            "deposit.html",
+            message="Invalid request. Please refresh and try again.",
+            idempotency_key=secrets.token_hex(16)
+        )
 
-        if amount.as_tuple().exponent < -2:
-            message = "Maximum two decimal places are allowed."
-            return render_template("deposit.html", message=message)
+    raw_amount = request.form.get("amount", "").strip()
 
-        amount_paise = int(amount * 100)
-        connection = get_connection()
+    try:
+        amount = Decimal(raw_amount)
+    except InvalidOperation:
+        return render_template(
+            "deposit.html",
+            message="Please enter a valid amount.",
+            idempotency_key=submitted_key
+        )
 
-        try:
-            connection.execute("BEGIN IMMEDIATE")
+    if not amount.is_finite() or amount <= 0:
+        return render_template(
+            "deposit.html",
+            message="Please enter a valid amount.",
+            idempotency_key=submitted_key
+        )
 
-            account = connection.execute("""
-                SELECT id
-                FROM accounts
-                WHERE user_id = ?
-                AND status = 'active'
-                ORDER BY id
-                LIMIT 1
-            """, (session["user_id"],)).fetchone()
+    if amount.as_tuple().exponent < -2:
+        return render_template(
+            "deposit.html",
+            message="Maximum two decimal places are allowed.",
+            idempotency_key=submitted_key
+        )
 
-            if account is None:
-                raise ValueError("No active account found.")
+    amount_paise = int(amount * 100)
+    connection = get_connection()
 
-            system_account = connection.execute("""
-                SELECT id
-                FROM accounts
-                WHERE account_number = ?
-                AND status = 'active'
-            """, ("LLSYSTEM0001",)).fetchone()
+    try:
+        connection.execute("BEGIN IMMEDIATE")
 
-            if system_account is None:
-                raise ValueError("System account not found.")
+        existing = connection.execute("""
+            SELECT id
+            FROM transactions
+            WHERE idempotency_key = ?
+        """, (submitted_key,)).fetchone()
 
-            idempotency_key = secrets.token_hex(16)
-
-            cursor = connection.execute("""
-                INSERT INTO transactions (
-                    transaction_type,
-                    amount_paise,
-                    from_account,
-                    to_account,
-                    idempotency_key,
-                    description
-                )
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                "deposit",
-                amount_paise,
-                system_account["id"],
-                account["id"],
-                idempotency_key,
-                "Money deposited"
-            ))
-
-            transaction_id = cursor.lastrowid
-
-            update = connection.execute("""
-                UPDATE accounts
-                SET balance_paise = balance_paise + ?
-                WHERE id = ?
-                AND status = 'active'
-            """, (amount_paise, account["id"]))
-
-            if update.rowcount != 1:
-                raise ValueError("Customer balance update failed.")
-
-            connection.execute("""
-                INSERT INTO ledger_entries (
-                    transaction_id, account_id, entry_type, amount_paise
-                )
-                VALUES (?, ?, ?, ?)
-            """, (
-                transaction_id,
-                system_account["id"],
-                "debit",
-                amount_paise
-            ))
-
-            connection.execute("""
-                INSERT INTO ledger_entries (
-                    transaction_id, account_id, entry_type, amount_paise
-                )
-                VALUES (?, ?, ?, ?)
-            """, (
-                transaction_id,
-                account["id"],
-                "credit",
-                amount_paise
-            ))
-
-            connection.execute("""
-                INSERT INTO audit_logs (user_id, action, details)
-                VALUES (?, ?, ?)
-            """, (
-                session["user_id"],
-                "DEPOSIT",
-                f"Deposited Rs. {amount:.2f}"
-            ))
-
-            validate_ledger_transaction(connection, transaction_id)
-
-            connection.commit()
-
-            return redirect(url_for("dashboard"))
-
-        except Exception as error:
+        if existing:
             connection.rollback()
-            print("DEPOSIT ERROR:", error)
-            message = "Deposit failed. Please try again."
+            return render_template(
+                "deposit.html",
+                message="This deposit has already been processed.",
+                idempotency_key=secrets.token_hex(16)
+            )
 
-        finally:
-            connection.close()
+        account = connection.execute("""
+            SELECT id
+            FROM accounts
+            WHERE user_id = ?
+            AND status = 'active'
+            ORDER BY id
+            LIMIT 1
+        """, (session["user_id"],)).fetchone()
 
-    return render_template("deposit.html", message=message)
+        if account is None:
+            raise ValueError("No active account found.")
 
+        system_account = connection.execute("""
+            SELECT id
+            FROM accounts
+            WHERE account_number = ?
+            AND status = 'active'
+        """, ("LLSYSTEM0001",)).fetchone()
+
+        if system_account is None:
+            raise ValueError("System account not found.")
+
+        cursor = connection.execute("""
+            INSERT INTO transactions (
+                transaction_type,
+                amount_paise,
+                from_account,
+                to_account,
+                idempotency_key,
+                description
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            "deposit",
+            amount_paise,
+            system_account["id"],
+            account["id"],
+            submitted_key,
+            "Money deposited"
+        ))
+
+        transaction_id = cursor.lastrowid
+
+        update = connection.execute("""
+            UPDATE accounts
+            SET balance_paise = balance_paise + ?
+            WHERE id = ?
+            AND status = 'active'
+        """, (amount_paise, account["id"]))
+
+        if update.rowcount != 1:
+            raise ValueError("Customer balance update failed.")
+
+        connection.execute("""
+            INSERT INTO ledger_entries (
+                transaction_id, account_id, entry_type, amount_paise
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
+            transaction_id,
+            system_account["id"],
+            "debit",
+            amount_paise
+        ))
+
+        connection.execute("""
+            INSERT INTO ledger_entries (
+                transaction_id, account_id, entry_type, amount_paise
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
+            transaction_id,
+            account["id"],
+            "credit",
+            amount_paise
+        ))
+
+        connection.execute("""
+            INSERT INTO audit_logs (user_id, action, details)
+            VALUES (?, ?, ?)
+        """, (
+            session["user_id"],
+            "DEPOSIT",
+            f"Deposited Rs. {amount:.2f}"
+        ))
+
+        validate_ledger_transaction(connection, transaction_id)
+
+        connection.commit()
+
+        return redirect(url_for("dashboard"))
+
+    except Exception as error:
+        connection.rollback()
+        print("DEPOSIT ERROR:", error)
+        message = "Deposit failed. Please try again."
+
+    finally:
+        connection.close()
+
+    return render_template(
+        "deposit.html",
+        message=message,
+        idempotency_key=submitted_key
+    )
+# -----------------------------------------
+# WITHDRAW
+# -----------------------------------------
 
 # -----------------------------------------
 # WITHDRAW
@@ -451,139 +521,188 @@ def withdraw():
 
     message = ""
 
-    if request.method == "POST":
+    if request.method == "GET":
+        return render_template(
+            "withdraw.html",
+            message=message,
+            idempotency_key=secrets.token_hex(16)
+        )
 
-        raw_amount = request.form.get("amount", "").strip()
+    submitted_key = request.form.get(
+        "idempotency_key", ""
+    ).strip()
 
-        try:
-            amount = Decimal(raw_amount)
-        except InvalidOperation:
-            message = "Please enter a valid amount."
-            return render_template("withdraw.html", message=message)
+    if len(submitted_key) != 32:
+        return render_template(
+            "withdraw.html",
+            message="Invalid request. Please refresh and try again.",
+            idempotency_key=secrets.token_hex(16)
+        )
 
-        if not amount.is_finite() or amount <= 0:
-            message = "Please enter a valid amount."
-            return render_template("withdraw.html", message=message)
+    try:
+        int(submitted_key, 16)
+    except ValueError:
+        return render_template(
+            "withdraw.html",
+            message="Invalid request. Please refresh and try again.",
+            idempotency_key=secrets.token_hex(16)
+        )
 
-        if amount.as_tuple().exponent < -2:
-            message = "Maximum two decimal places are allowed."
-            return render_template("withdraw.html", message=message)
+    raw_amount = request.form.get("amount", "").strip()
 
-        amount_paise = int(amount * 100)
-        connection = get_connection()
+    try:
+        amount = Decimal(raw_amount)
+    except InvalidOperation:
+        return render_template(
+            "withdraw.html",
+            message="Please enter a valid amount.",
+            idempotency_key=submitted_key
+        )
 
-        try:
-            connection.execute("BEGIN IMMEDIATE")
+    if not amount.is_finite() or amount <= 0:
+        return render_template(
+            "withdraw.html",
+            message="Please enter a valid amount.",
+            idempotency_key=submitted_key
+        )
 
-            account = connection.execute("""
-                SELECT id
-                FROM accounts
-                WHERE user_id = ?
-                AND status = 'active'
-                ORDER BY id
-                LIMIT 1
-            """, (session["user_id"],)).fetchone()
+    if amount.as_tuple().exponent < -2:
+        return render_template(
+            "withdraw.html",
+            message="Maximum two decimal places are allowed.",
+            idempotency_key=submitted_key
+        )
 
-            if account is None:
-                raise ValueError("No active account found.")
+    amount_paise = int(amount * 100)
+    connection = get_connection()
 
-            system_account = connection.execute("""
-                SELECT id
-                FROM accounts
-                WHERE account_number = ?
-                AND status = 'active'
-            """, ("LLSYSTEM0001",)).fetchone()
+    try:
+        connection.execute("BEGIN IMMEDIATE")
 
-            if system_account is None:
-                raise ValueError("System account not found.")
+        existing = connection.execute("""
+            SELECT id
+            FROM transactions
+            WHERE idempotency_key = ?
+        """, (submitted_key,)).fetchone()
 
-            update = connection.execute("""
-                UPDATE accounts
-                SET balance_paise = balance_paise - ?
-                WHERE id = ?
-                AND status = 'active'
-                AND balance_paise >= ?
-            """, (amount_paise, account["id"], amount_paise))
-
-            if update.rowcount != 1:
-                raise ValueError("Insufficient balance.")
-
-            idempotency_key = secrets.token_hex(16)
-
-            cursor = connection.execute("""
-                INSERT INTO transactions (
-                    transaction_type,
-                    amount_paise,
-                    from_account,
-                    to_account,
-                    idempotency_key,
-                    description
-                )
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                "withdrawal",
-                amount_paise,
-                account["id"],
-                system_account["id"],
-                idempotency_key,
-                "Money withdrawn"
-            ))
-
-            transaction_id = cursor.lastrowid
-
-            connection.execute("""
-                INSERT INTO ledger_entries (
-                    transaction_id, account_id, entry_type, amount_paise
-                )
-                VALUES (?, ?, ?, ?)
-            """, (
-                transaction_id,
-                account["id"],
-                "debit",
-                amount_paise
-            ))
-
-            connection.execute("""
-                INSERT INTO ledger_entries (
-                    transaction_id, account_id, entry_type, amount_paise
-                )
-                VALUES (?, ?, ?, ?)
-            """, (
-                transaction_id,
-                system_account["id"],
-                "credit",
-                amount_paise
-            ))
-
-            connection.execute("""
-                INSERT INTO audit_logs (user_id, action, details)
-                VALUES (?, ?, ?)
-            """, (
-                session["user_id"],
-                "WITHDRAWAL",
-                f"Withdrawn Rs. {amount:.2f}"
-            ))
-
-            validate_ledger_transaction(connection, transaction_id)
-
-            connection.commit()
-
-            return redirect(url_for("dashboard"))
-
-        except Exception as error:
+        if existing:
             connection.rollback()
-            print("WITHDRAWAL ERROR:", error)
+            return render_template(
+                "withdraw.html",
+                message="This withdrawal has already been processed.",
+                idempotency_key=secrets.token_hex(16)
+            )
 
-            if str(error) == "Insufficient balance.":
-                message = "Insufficient balance."
-            else:
-                message = "Withdrawal failed. Please try again."
+        account = connection.execute("""
+            SELECT id
+            FROM accounts
+            WHERE user_id = ?
+            AND status = 'active'
+            ORDER BY id
+            LIMIT 1
+        """, (session["user_id"],)).fetchone()
 
-        finally:
-            connection.close()
+        if account is None:
+            raise ValueError("No active account found.")
 
-    return render_template("withdraw.html", message=message)
+        system_account = connection.execute("""
+            SELECT id
+            FROM accounts
+            WHERE account_number = ?
+            AND status = 'active'
+        """, ("LLSYSTEM0001",)).fetchone()
 
+        if system_account is None:
+            raise ValueError("System account not found.")
+
+        update = connection.execute("""
+            UPDATE accounts
+            SET balance_paise = balance_paise - ?
+            WHERE id = ?
+            AND status = 'active'
+            AND balance_paise >= ?
+        """, (amount_paise, account["id"], amount_paise))
+
+        if update.rowcount != 1:
+            raise ValueError("Insufficient balance.")
+
+        cursor = connection.execute("""
+            INSERT INTO transactions (
+                transaction_type,
+                amount_paise,
+                from_account,
+                to_account,
+                idempotency_key,
+                description
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            "withdrawal",
+            amount_paise,
+            account["id"],
+            system_account["id"],
+            submitted_key,
+            "Money withdrawn"
+        ))
+
+        transaction_id = cursor.lastrowid
+
+        connection.execute("""
+            INSERT INTO ledger_entries (
+                transaction_id, account_id, entry_type, amount_paise
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
+            transaction_id,
+            account["id"],
+            "debit",
+            amount_paise
+        ))
+
+        connection.execute("""
+            INSERT INTO ledger_entries (
+                transaction_id, account_id, entry_type, amount_paise
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
+            transaction_id,
+            system_account["id"],
+            "credit",
+            amount_paise
+        ))
+
+        connection.execute("""
+            INSERT INTO audit_logs (user_id, action, details)
+            VALUES (?, ?, ?)
+        """, (
+            session["user_id"],
+            "WITHDRAWAL",
+            f"Withdrawn Rs. {amount:.2f}"
+        ))
+
+        validate_ledger_transaction(connection, transaction_id)
+
+        connection.commit()
+
+        return redirect(url_for("dashboard"))
+
+    except Exception as error:
+        connection.rollback()
+        print("WITHDRAWAL ERROR:", error)
+
+        if str(error) == "Insufficient balance.":
+            message = "Insufficient balance."
+        else:
+            message = "Withdrawal failed. Please try again."
+
+    finally:
+        connection.close()
+
+    return render_template(
+        "withdraw.html",
+        message=message,
+        idempotency_key=submitted_key
+    )
 
 # -----------------------------------------
 # TRANSFER

@@ -1,10 +1,10 @@
 
+<```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Withdraw Money | LedgerLine</title>
 
     <link rel="stylesheet"
@@ -56,6 +56,12 @@
 
                 <form method="POST"
                       action="{{ url_for('withdraw') }}">
+
+                    <input
+                        type="hidden"
+                        name="idempotency_key"
+                        value="{{ idempotency_key }}"
+                    >
 
                     <label for="amount">Withdrawal Amount</label>
 
@@ -131,3 +137,4 @@
 
 </body>
 </html>
+```

@@ -1,5 +1,5 @@
 
-<!
+<
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -58,6 +58,13 @@
                 <form method="POST"
                       action="{{ url_for('deposit') }}">
 
+                    <!-- Prevent duplicate deposit submissions -->
+                    <input
+                        type="hidden"
+                        name="idempotency_key"
+                        value="{{ idempotency_key }}"
+                    >
+
                     <label for="amount">Deposit Amount</label>
 
                     <div class="deposit-input-wrapper">
@@ -95,7 +102,7 @@
 
                 <div class="deposit-info-icon">↗</div>
 
-                <h3>Secure Banking</h3>
+                <h3>Secure Digital</h3>
 
                 <p>
                     Every deposit is recorded with a transaction reference,
